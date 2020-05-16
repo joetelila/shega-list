@@ -1,5 +1,5 @@
 from telebot import types
-
+import time
 
 class commandHelper:
     def __init__(self, bot, db):
@@ -8,6 +8,7 @@ class commandHelper:
 
     def sell(self, message):
         #self.bot.send_message(message.chat.id, "calling the sell function.")
+        self.send_typing(message)
         result = self.db.isUserRegistered(message)
         if not result:  # if the user is not registered
             self.bot.send_message(message.chat.id, "{0} ;), I see it's your first time selling here.".format(message.chat.first_name),)
@@ -21,6 +22,10 @@ class commandHelper:
             self.db.update_state(4, message)
 
         #
+
+    def send_typing(self,message):
+        self.bot.send_chat_action(message.chat.id, 'typing')
+        time.sleep(2)
 
     def register(self, message):
         markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, row_width=1, resize_keyboard = True)
