@@ -8,20 +8,17 @@ class commandHelper:
 
     def sell(self, message):
         #self.bot.send_message(message.chat.id, "calling the sell function.")
-        self.send_typing(message)
         result = self.db.isUserRegistered(message)
         if not result:  # if the user is not registered
             self.bot.send_message(message.chat.id, "{0} ;), I see it's your first time selling here.".format(message.chat.first_name),)
             self.register(message)
         else:
-            markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, row_width=2)
-            markup.add("Electronics", "Clothing","Furnitures","Books","Jewelries","Accessories","Watches","Others",'Cancel')
+            markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, row_width=3, resize_keyboard = True)
+            markup.add("Electronics", "Clothing","Furnitures","Books","Jewelries","Accessories","Watches","Beuty & Health","Others",'❌ Cancel')
             msgStart = self.bot.send_message(message.chat.id, """\
         Perfect:), What would you like to sell??\
         """, reply_markup=markup, parse_mode="html",)
             self.db.update_state(4, message)
-
-        #
 
     def send_typing(self,message):
         self.bot.send_chat_action(message.chat.id, 'typing')
