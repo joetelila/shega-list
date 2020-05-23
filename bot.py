@@ -168,8 +168,8 @@ Now, send me yours 😊
 def collect_phone_detail(message):
     state = db.get_user_state(message)
     global userForm
-    if state == 3:            bot.answer_callback_query(call.id, "Sorry, you can't modify this product." )
-
+    if state == 3:
+        bot.answer_callback_query(call.id, "Sorry, you can't modify this product." )
         userForm["phone"] = message.contact.phone_number
         db.register_user(userForm,message)
         cmd.sell(message)
