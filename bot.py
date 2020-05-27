@@ -10,7 +10,7 @@ bot = telebot.TeleBot(TOKEN)
 
 
 db = DB_helper(bot)
-#cmd = commandHelper(bot, db)
+cmd = commandHelper(bot, db)
 
 # global variables
 
@@ -153,7 +153,6 @@ def collect_phone_detail(message):
     state = db.get_user_state(message)
     global userForm
     if state == 3:
-        bot.answer_callback_query(call.id, "Sorry, you can't modify this product." )
         userForm["phone"] = message.contact.phone_number
         db.register_user(userForm,message)
         cmd.sell(message)
@@ -439,8 +438,8 @@ def help_state(message, listOfcommands):
                 msgStart = bot.send_message(message.chat.id, """Sending you all UNAPPROVED items . . .""", reply_markup=markup, parse_mode="html",)
                 db.un_approved_items(message)
             else:
-                bot.send_message(message.chat.id, "Sorry, you're not allowed to use this button.")
-                send_welcome(message)
+                bot.send_message(message.chat.id, "Sorry, you're not allowed to use this button. sending you to home")
+                send_welcome_again(message)
 
         elif message.text == "Home":
             send_welcome(message)

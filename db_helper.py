@@ -25,8 +25,8 @@ class DB_helper:
         firebase_admin.initialize_app(cred, {
             'databaseURL': 'https://shega-list.firebaseio.com/'
         })
-        self.ref = db.reference("users")
-
+        self.user_ref = db.reference("users")
+        self.product_ref = db.reference("products")
 
     def saveuser(self, message):
         tgId = message.from_user.id
@@ -35,7 +35,7 @@ class DB_helper:
         registered = 0
         state = 1
         if not self.isUserNew(message):
-            self.ref.push({
+            self.user_ref.push({
             'tgId' : tgId,
             'fname': fname,
             'lname': lname,
@@ -46,7 +46,7 @@ class DB_helper:
 
     def isUserNew(self, message):
         # check if the user is already registered
-        result = self.ref.order_by_child('tgId').equal_to(message.from_user.id).get()
+        result = self.user_ref.order_by_child('tgId').equal_to(message.from_user.id).get()
         if len(result) == 1:
             return True
         else:
@@ -54,29 +54,26 @@ class DB_helper:
 
     def isUserRegistered(self, message):
         # check if the user is already registered
-        command_checkuser = "SELECT * FROM users WHERE tgID = "+str(message.from_user.id)
-        lock.acquire(True)
-        result = self.cursor.execute(command_checkuser)
-        users = result.fetchall()
-        lock.release()
-        if len(users) == 1 and users[0][6] == 1:
+
+        result = self.user_ref.order_by_child('tgId').equal_to(message.from_user.id).get()
+        for key, val in result.items():
+            values = val
+
+        if len(result) == 1 and val["registered"] == 1:
             print("registered")
             return True
         else:
-            print("not registered")
+            print("user not registered")
             return False
+
 
     def isAdmin(self, message):  # ->
 
-        lock.acquire(True)
-        result = self.cursor.execute("""SELECT * FROM  users WHERE
-            tgID = ?
-            AND privilage = ?
-                """,(str(message.from_user.id),1))
-        admin = result.fetchall()
-        lock.release()
+        result = self.user_ref.order_by_child('tgId').equal_to(message.from_user.id).get()
+        for key, val in result.items():
+            values = val
 
-        if len(admin) == 1:
+        if len(result) == 1 and val["privilage"] == 1:
             print("admin")
             return True
         else:
@@ -84,12 +81,27 @@ class DB_helper:
             return False
 
 
+
     def register_user(self, userData,message): #  ->
         phone = userData["phone"]
         city = userData["city"]
         registered = 1
         privilage = 0
-        lock.acquire(True)
+
+        result = self.user_ref.order_by_child('tgId').equal_to(message.from_user.id).get()
+        for key, val in result.items():
+            user_key = key
+        user_ref = self.user_ref.child(user_key)
+        user_ref.update({
+            'phoneNumber': phone,
+            'city': city,
+            'registered': registered,
+            'privilage': privilage
+        })
+        self.bot.send_message(message.chat.id, "Sweet;), Successfully registered")
+
+
+        '''lock.acquire(True)
         self.cursor.execute("""UPDATE  users SET
             phoneNumber = ?,
             city = ?,
@@ -98,18 +110,25 @@ class DB_helper:
             WHERE tgID = ?""",(str(phone),str(city), registered,privilage,str(message.from_user.id)))
         self.conn.commit()
         lock.release()
-        self.bot.send_message(message.chat.id, "Sweet;), Successfully registered")
+        self.bot.send_message(message.chat.id, "Sweet;), Successfully registered")'''
 
     def update_state(self, state, message): # -> done
-        lock.acquire(True)
-        self.cursor.execute("""UPDATE  users SET
-            state = ?
-            WHERE tgID = ?
-                """,(state,str(message.from_user.id)))
-        self.conn.commit()
-        lock.release()
+
+        result = self.user_ref.order_by_child('tgId').equal_to(message.from_user.id).get()
+        for key, val in result.items():
+            user_key = key
+        user_ref = self.user_ref.child(user_key)
+        user_ref.update({
+            'state': state
+        })
 
     def get_user_state(self,message):  # -> done
+
+        result = self.user_ref.order_by_child('tgId').equal_to(message.from_user.id).get()
+        for key, val in result.items():
+            val = val
+        return val['state']
+
         '''lock.acquire(True)
         command_checkuser = "SELECT state FROM users WHERE tgID = "+str(message.from_user.id)
         result = self.cursor.execute(command_checkuser)
@@ -124,10 +143,19 @@ class DB_helper:
         separator = ","
         deleted = 0
         soldPost = 0
-        lock.acquire(True)
-        self.cursor.execute("""INSERT INTO products ('userID', 'cat','pictures','title','description','price','location','status','deleted','soldPost') VALUES (?, ?, ?, ?, ?, ?,?,?,?,?)""", (message.from_user.id,str(productForm["cat"]), separator.join(map(str,photos)),productForm["title"],productForm["desc"], productForm["price"],location, status,deleted,soldPost))
-        self.conn.commit()
-        lock.release()
+        self.product_ref.push({
+                'userID' : message.from_user.id,
+                'cat': productForm["cat"],
+                'pictures': separator.join(map(str,photos)),
+                'title': productForm["title"],
+                'description': productForm["desc"],
+                'price': productForm["price"],
+                'location': location,
+                'status': status,
+                'deleted': deleted,
+                'soldPost': soldPost
+                })
+
 
     def seller_item(self, message):  # ->
         self.send_typing(message)
@@ -235,15 +263,17 @@ PRICE : {2} Br
 
 
     def un_approved_items(self, message):
-        lock.acquire(True)
-        result = self.cursor.execute("""SELECT * FROM  products WHERE
-            status = ?
-            AND deleted = ?
-                """,(0,0))
-        products = result.fetchall()
-        lock.release()
+
+        products = []
+        result = self.product_ref.order_by_child('status').equal_to(0).get() # where status = 0, means unapproved
+        for key, val in result.items():
+            val["key"] = key
+            if val["deleted"] == 0:
+                products.append(val)
+            else:
+                pass
         self.send_unapproved_products(products,message)
-        print(len(products))
+
 
 
 
@@ -324,7 +354,7 @@ Price : {2} Br | Contact : {3}
     def send_unapproved_Images(self, products,message):
 
         self.send_typing(message)
-        pictures = products[3].split(",")
+        pictures = products["pictures"].split(",")
         file_id1 = pictures[0]
         file1 = self.bot.get_file(file_id1)
         file1 = self.bot.download_file(file1.file_path)
@@ -340,7 +370,7 @@ Price : {2} Br | Contact : {3}
 Price: {2}Br | Contact: {3}
 
 📍: {4}
-        """.format(products[2],products[4],products[5],self.get_mention(message),products[6], products[9]) ,reply_markup=self.gen_markup_unapproved(products[0],message.chat.id), parse_mode="Markdown") # status parameter is to change the sold/resell button
+        """.format(products["cat"],products["description"],products["price"],self.get_mention(message),products["location"], products["title"]) ,reply_markup=self.gen_markup_unapproved(products["key"],message.chat.id), parse_mode="Markdown") # status parameter is to change the sold/resell button
 
 
     def gen_markup_unapproved(self,id,user_id):
@@ -356,13 +386,19 @@ Price: {2}Br | Contact: {3}
 
     def update_product_status(self, id, data): # ->
 
-        lock.acquire(True)
+
+        pro_ref = self.product_ref.child(id)
+        pro_ref.update({
+            'status': data
+            })
+
+        '''lock.acquire(True)
         self.cursor.execute("""UPDATE  products SET
             status = ?
             WHERE productID = ?
                 """,(data,id))
         self.conn.commit()
-        lock.release()
+        lock.release()'''
 
 
     def update_product_status_resell(self, id, data):  # this method resets the sold post aswell
@@ -417,7 +453,13 @@ Have anything to sell?🤔. Post it on @shegalistbot
 
     def post_to_channel(self,product_id):
         # self.bot.send_message("@shegalist","Hi")
-        lock.acquire(True)
+        product = self.product_ref.child(product_id).get()
+        product["key"] = product_id
+        user_ID = product["userID"]
+        self.post_image_to_channel(product, user_ID)
+
+
+        '''lock.acquire(True)
         result = self.cursor.execute("""SELECT * FROM  products WHERE
             productID = ?
             AND deleted = ?
@@ -429,10 +471,10 @@ Have anything to sell?🤔. Post it on @shegalistbot
             user_ID = products[0][1]
             self.post_image_to_channel(products, user_ID)
         else:
-            print("something went wrong..at post to a channel method")
+            print("something went wrong..at post to a channel method") '''
 
     def post_image_to_channel(self, products, user_ID):
-        pictures = products[0][3].split(",")
+        pictures = products["pictures"].split(",")
         if len(pictures) == 1:
             self.post_one_images("@shegalist",pictures,products,user_ID)
         elif len(pictures) == 2:
@@ -442,23 +484,19 @@ Have anything to sell?🤔. Post it on @shegalistbot
         else:
             print("something went wrong..at post to a post_image_to_channel method")
             return
-        if self.isGPS(products[0]):
-            self.send_location_and_buttons(products[0])
+        if self.isGPS(products):
+            self.send_location_and_buttons(products)
 
     def send_location_and_buttons(self, product):
-        location = product[6]
-        isgps = re.match("^[-+]?([1-8]?\d(\.\d+)?|90(\.0+)?),\s*[-+]?(180(\.0+)?|((1[0-7]\d)|([1-9]?\d))(\.\d+)?)$", location)
-        if isgps:
-            location = location.split(",")
-            longi = location[0]
-            latit = location[1]
-            self.bot.send_location("@shegalist", latitude=latit,longitude=longi, reply_markup=self.gen_markup_post(product[0]) ) # status parameter is to change the sold/resell button
+        location = product["location"]
+        location = location.split(",")
+        longi = location[0]
+        latit = location[1]
+        self.bot.send_location("@shegalist", latitude=latit,longitude=longi, reply_markup=self.gen_markup_post(product["key"]) ) # status parameter is to change the sold/resell button
 
-        else:
-            print("address")
 
     def isGPS(self, product):
-        location = product[6]
+        location = product["location"]
         isgps = re.match("^[-+]?([1-8]?\d(\.\d+)?|90(\.0+)?),\s*[-+]?(180(\.0+)?|((1[0-7]\d)|([1-9]?\d))(\.\d+)?)$", location)
         if isgps:
             return True
@@ -477,7 +515,7 @@ Have anything to sell?🤔. Post it on @shegalistbot
         with open("file1.png","wb") as f:
             f.write(file1)
 
-        if self.isGPS(products[0]):
+        if self.isGPS(products):
             photo1 = telebot.types.InputMediaPhoto(open("file1.png","rb"), caption="""
 #{0}   @shegalist
 
@@ -488,7 +526,7 @@ Have anything to sell?🤔. Post it on @shegalistbot
 Price: {2}Br | Contact: {3}
 
 Have anything to sell?🤔. Post it on @shegalistbot
-            """.format(products[0][2],products[0][4],products[0][5],self.get_post_mention(user_ID),products[0][9]), parse_mode="Markdown")
+            """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID),products["title"]), parse_mode="Markdown")
 
         else:
             photo1 = telebot.types.InputMediaPhoto(open("file1.png","rb"), caption="""
@@ -503,7 +541,7 @@ Price: {2}Br | Contact: {3}
 📍: {4}
 
 Have anything to sell?🤔. Post it on @shegalistbot
-            """.format(products[0][2],products[0][4],products[0][5],self.get_post_mention(user_ID),products[0][6],products[0][9]), parse_mode="Markdown")
+            """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID),products["location"],products["title"]), parse_mode="Markdown")
 
         media = [photo1]
         self.bot.send_media_group(id, media)
@@ -524,7 +562,7 @@ Have anything to sell?🤔. Post it on @shegalistbot
 
         photo1 = telebot.types.InputMediaPhoto(open("file1.png","rb"))
 
-        if self.isGPS(products[0]):
+        if self.isGPS(products):
             photo2 = telebot.types.InputMediaPhoto(open("file2.png","rb"), caption="""
 #{0}   @shegalist
 
@@ -535,12 +573,13 @@ Have anything to sell?🤔. Post it on @shegalistbot
 Price: {2}Br | Contact: {3}
 
 Have anything to sell?🤔. Post it on @shegalistbot
-            """.format(products[0][2],products[0][4],products[0][5],self.get_post_mention(user_ID),products[0][9]), parse_mode="Markdown")
+            """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID),products["title"]), parse_mode="Markdown")
+
         else:
             photo2 = telebot.types.InputMediaPhoto(open("file2.png","rb"), caption="""
 #{0}   @shegalist
 
-{4}
+{5}
 
 {1}
 
@@ -549,7 +588,7 @@ Price: {2}Br | Contact: {3}
 📍: {4}
 
 Have anything to sell?🤔. Post it on @shegalistbot
-            """.format(products[0][2],products[0][4],products[0][5],self.get_post_mention(user_ID),products[0][6],products[0][6]), parse_mode="Markdown")
+            """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID),products["location"],products["title"]), parse_mode="Markdown")
 
 
 
@@ -579,7 +618,7 @@ Have anything to sell?🤔. Post it on @shegalistbot
         photo2 = telebot.types.InputMediaPhoto(open("file2.png","rb"))
         photo3 = telebot.types.InputMediaPhoto(open("file3.png","rb"))
 
-        if self.isGPS(products[0]):
+        if self.isGPS(products):
             photo1 = telebot.types.InputMediaPhoto(open("file1.png","rb"), caption="""
 #{0}   @shegalist
 
@@ -590,10 +629,13 @@ Have anything to sell?🤔. Post it on @shegalistbot
 Price: {2}Br | Contact: {3}
 
 Have anything to sell?🤔. Post it on @shegalistbot
-            """.format(products[0][2],products[0][4],products[0][5],self.get_post_mention(user_ID),products[0][9]), parse_mode="Markdown")
+            """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID),products["title"]), parse_mode="Markdown")
+
         else:
             photo1 = telebot.types.InputMediaPhoto(open("file1.png","rb"), caption="""
-#{0}
+#{0}   @shegalist
+
+{5}
 
 {1}
 
@@ -602,7 +644,7 @@ Price: {2}Br | Contact: {3}
 📍: {4}
 
 Have anything to sell?🤔. Post it on @shegalistbot
-            """.format(products[0][2],products[0][4],products[0][5],self.get_post_mention(user_ID),products[0][6]), parse_mode="Markdown")
+            """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID),products["location"],products["title"]), parse_mode="Markdown")
 
         media = [photo1, photo2,photo3]
         self.bot.send_media_group(id, media)
