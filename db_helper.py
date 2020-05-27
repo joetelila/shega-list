@@ -1,45 +1,32 @@
-import sqlite3
-import threading
-import telebot
 from cmdHelper import commandHelper
 import time
-import re
+import re # regexp matching library
+# telegram library imports
+import telebot
 from telebot import types
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
+# firebase realtime db imports
+import firebase_admin
+from firebase_admin import credentials
+from firebase_admin import db
+
+
+
 #define connection
-
-lock = threading.Lock()
-
 db_limit = 5
 db_offset = 0
 total_pro = 0
 category = "all"
 
-
-
 class DB_helper:
-    def __init__(self, bot, dbname = "shegalist.db"):
-        self.dbname = dbname
-        self.conn = sqlite3.connect(dbname, check_same_thread=False)
-        self.cursor = self.conn.cursor()
+    def __init__(self, bot):
         self.bot = bot
+        cred = credentials.Certificate("creds/shega-list-firebase.json")
+        firebase_admin.initialize_app(cred, {
+            'databaseURL': 'https://shega-list.firebaseio.com/'
+        })
+        self.ref = db.reference("users")
 
-    def create_userTable(self):
-        lock.acquire(True)
-        command1 = """CREATE TABLE IF NOT EXISTS
-        users(tgID BIGINT PRIMARY KEY, fName TEXT, lName TEXT,
-        phoneNumber TEXT , city TEXT, state INTEGER, registered INTEGER, privilage INTEGER )"""
-        self.cursor.execute(command1)
-        self.conn.commit()
-        lock.release()
-    def create_productTable(self):
-        lock.acquire(True)
-        command1 = """CREATE TABLE IF NOT EXISTS
-        products(productID INTEGER PRIMARY KEY AUTOINCREMENT, userID BIGINT, cat TEXT, pictures TEXT, description TEXT,
-        price TEXT , location TEXT, status INTEGER, deleted INTEGER, title TEXT, soldPost INTEGER)"""
-        self.cursor.execute(command1)
-        self.conn.commit()
-        lock.release()
 
     def saveuser(self, message):
         tgId = message.from_user.id
@@ -48,22 +35,22 @@ class DB_helper:
         registered = 0
         state = 1
         if not self.isUserNew(message):
-            lock.acquire(True)
-            self.cursor.execute("""INSERT INTO users ('tgID', 'fName','lName','state','registered') VALUES (?, ?, ?, ?, ?)""", (tgId, str(fname),str(lname), state, registered))
-            self.conn.commit()
-            lock.release()
+            self.ref.push({
+            'tgId' : tgId,
+            'fname': fname,
+            'lname': lname,
+            'state': state,
+            'registered': registered
+            })
 
 
     def isUserNew(self, message):
         # check if the user is already registered
-        lock.acquire(True)
-        command_checkuser = "SELECT * FROM users WHERE tgID = "+str(message.from_user.id)
-        result = self.cursor.execute(command_checkuser)
-        lock.release()
-        if len(result.fetchall()) == 0:
-            return False
-        else:
+        result = self.ref.order_by_child('tgId').equal_to(message.from_user.id).get()
+        if len(result) == 1:
             return True
+        else:
+            return False
 
     def isUserRegistered(self, message):
         # check if the user is already registered
@@ -79,7 +66,7 @@ class DB_helper:
             print("not registered")
             return False
 
-    def isAdmin(self, message):
+    def isAdmin(self, message):  # ->
 
         lock.acquire(True)
         result = self.cursor.execute("""SELECT * FROM  users WHERE
@@ -97,7 +84,7 @@ class DB_helper:
             return False
 
 
-    def register_user(self, userData,message):
+    def register_user(self, userData,message): #  ->
         phone = userData["phone"]
         city = userData["city"]
         registered = 1
@@ -113,7 +100,7 @@ class DB_helper:
         lock.release()
         self.bot.send_message(message.chat.id, "Sweet;), Successfully registered")
 
-    def update_state(self, state, message):
+    def update_state(self, state, message): # -> done
         lock.acquire(True)
         self.cursor.execute("""UPDATE  users SET
             state = ?
@@ -122,15 +109,15 @@ class DB_helper:
         self.conn.commit()
         lock.release()
 
-    def get_user_state(self,message):
-        lock.acquire(True)
+    def get_user_state(self,message):  # -> done
+        '''lock.acquire(True)
         command_checkuser = "SELECT state FROM users WHERE tgID = "+str(message.from_user.id)
         result = self.cursor.execute(command_checkuser)
         state = result.fetchall()
         lock.release()
-        return state[0][0]
+        return state[0][0] '''
 
-    def add_new_product(self, message, photos, productForm):
+    def add_new_product(self, message, photos, productForm): # ->
 
         location = productForm["location"]
         status = 0 # unaproved
@@ -142,7 +129,7 @@ class DB_helper:
         self.conn.commit()
         lock.release()
 
-    def seller_item(self, message):
+    def seller_item(self, message):  # ->
         self.send_typing(message)
         self.bot.send_chat_action(message.chat.id, 'typing')
         lock.acquire(True)
@@ -199,9 +186,6 @@ PRICE : {2} Br
         time.sleep(2)
 
     def gen_markup(self,id,status):
-
-        print(status)
-
         markup = InlineKeyboardMarkup()
         callback_btn_detail = InlineKeyboardButton(text="🌟 Detail", callback_data="det,{0}".format(id))
         if str(status) == "SOLD":
@@ -370,7 +354,7 @@ Price: {2}Br | Contact: {3}
         return markup
 
 
-    def update_product_status(self, id, data):
+    def update_product_status(self, id, data): # ->
 
         lock.acquire(True)
         self.cursor.execute("""UPDATE  products SET
@@ -381,7 +365,7 @@ Price: {2}Br | Contact: {3}
         lock.release()
 
 
-    def update_product_status_resell(self, id, data):  # this methods resets the sold post aswell
+    def update_product_status_resell(self, id, data):  # this method resets the sold post aswell
 
         lock.acquire(True)
         self.cursor.execute("""UPDATE  products SET
@@ -433,7 +417,6 @@ Have anything to sell?🤔. Post it on @shegalistbot
 
     def post_to_channel(self,product_id):
         # self.bot.send_message("@shegalist","Hi")
-
         lock.acquire(True)
         result = self.cursor.execute("""SELECT * FROM  products WHERE
             productID = ?

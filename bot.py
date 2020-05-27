@@ -3,19 +3,14 @@ import telebot
 import datetime
 from db_helper import DB_helper
 from cmdHelper import commandHelper
-from flask import Flask, request
-import os
 
 
 TOKEN = "1231860504:AAEx9qZ8znwwdwwq8vOzxskLEGJCBeaSaWs"
 bot = telebot.TeleBot(TOKEN)
-server = Flask(__name__)
+
 
 db = DB_helper(bot)
-db.create_userTable()
-db.create_productTable()
-cmd = commandHelper(bot, db)
-
+#cmd = commandHelper(bot, db)
 
 # global variables
 
@@ -27,35 +22,24 @@ photos = []
 def send_welcome(message):
 
     db.saveuser(message)
-    print(message.text)
     if extract_unique_code(message.text):
         unique_code = extract_unique_code(message.text).split("_")
         cmd = unique_code[0]
         pro_id = unique_code[1]
         if cmd == "pr":
-            print("sending you a detailed inf")
+            print("sending you a detailed info")
         elif cmd == "wsh":
             print("adding product to your wishlist")
         else:
             bot.send_message(message.chat.id, "Sorry, wrong link")
             send_welcome(message)
     else:
-        if db.get_user_state(message):
-            state = db.get_user_state(message)
-        else:
-            state = 1
+
         db.update_state(1, message) # state = 1 means the user is at the home page
-        #db.sayHello()
         currentTime = datetime.datetime.now()
         markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, row_width=2)
         markup.add("Browse", "Search","Sell","Your Items","Wish Lists","Alert me","Help")
-
-        if state == 8:
-            msgStart = bot.send_message(message.chat.id, """\
-        Welcome back, What would you like to do next?\
-        """, reply_markup=markup, parse_mode="html",)
-        else:
-            msgStart = bot.send_message(message.chat.id, """\
+        msgStart = bot.send_message(message.chat.id, """\
 Selam {0}, {1}.
 Welcome to Shegalist. What would you like to do today?\
     """.format(message.chat.first_name, greeting(currentTime)), reply_markup=markup, parse_mode="html",)
@@ -492,19 +476,4 @@ def shareContact_state(message, listOfcommands):
         bot.send_message(message.chat.id, "Sorry, I don't understand that.")
 
 
-
-@server.route('/' + TOKEN, methods=['POST'])
-def getMessage():
-    bot.process_new_updates([telebot.types.Update.de_json(request.stream.read().decode("utf-8"))])
-    return "!", 200
-
-
-@server.route("/")
-def webhook():
-    bot.remove_webhook()
-    bot.set_webhook(url='https://shegalist.herokuapp.com/' + TOKEN)
-    return "!", 200
-
-
-if __name__ == "__main__":
-    server.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)))
+bot.polling()
