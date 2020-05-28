@@ -140,7 +140,6 @@ class DB_helper:
         user_detail = self.user_ref.order_by_child('tgId').equal_to(message.from_user.id).get()
         for key, val in user_detail.items():
             user = val
-        print(user_detail)
         location = productForm["location"]
         status = 0 # unaproved
         separator = ","
@@ -396,7 +395,9 @@ Price: {2}Br | Contact: {3}
         pro_ref.update({
             'status': data
             })
+
         product = self.product_ref.child(id).get()
+        print(product)
         if data == 1:
             self.bot.send_message(product["message_id"], "Hey {0}, your product has been approved 🤗.".format(pro_ref["seller_name"]))
         elif data == 3:
