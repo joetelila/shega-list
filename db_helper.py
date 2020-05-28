@@ -137,7 +137,7 @@ class DB_helper:
         return state[0][0] '''
 
     def add_new_product(self, message, photos, productForm): # ->
-
+        user_detail = self.user_ref.order_by_child('tgId').equal_to(message.from_user.id).get()
         location = productForm["location"]
         status = 0 # unaproved
         separator = ","
@@ -153,30 +153,33 @@ class DB_helper:
                 'location': location,
                 'status': status,
                 'deleted': deleted,
-                'soldPost': soldPost
+                'soldPost': soldPost,
+                'message_id':message.chat.id,
+                'seller_name': user_detail["fname"]
                 })
 
 
     def seller_item(self, message):  # ->
-        self.send_typing(message)
         self.bot.send_chat_action(message.chat.id, 'typing')
-        lock.acquire(True)
-        result = self.cursor.execute("""SELECT * FROM  products WHERE
-            userID = ?
-            AND deleted = ?
-                """,(str(message.from_user.id),0))
-        products = result.fetchall()
-        lock.release()
+        products = []
+        result = self.product_ref.order_by_child('userID').equal_to(message.from_user.id).get() # where status = 0, means unapproved
+        for key, val in result.items():
+            val["key"] = key
+            if val["deleted"] == 0:
+                products.append(val)
+            else:
+                pass
+
         if len(products) == 0:
             self.bot.send_message(message.chat.id, "Apperently, your list is empty.")
         else:
             for i in products:
-                status = i[7]
-                price = i[5]
-                desc = i[4]
-                owner_id = i[1]  # I need this id to make pass to the inline buttons
-                pro_id = i[0]
-                title = i[9]
+                status = i["status"]
+                price = i["price"]
+                desc = i["description"]
+                owner_id = i["userID"]  # I need this id to make pass to the inline buttons
+                pro_id = i["key"]
+                title = i["title"]
                 buttonid = ""+str(owner_id)+","+str(pro_id)
 
 
@@ -193,7 +196,7 @@ class DB_helper:
                 else:
                     status ="UNLISTED"
 
-                picture = i[3].split(",")
+                picture = i["pictures"].split(",")
                 file_id1 = picture[1]
                 file1 = self.bot.get_file(file_id1)
                 file1 = self.bot.download_file(file1.file_path)
@@ -215,7 +218,7 @@ PRICE : {2} Br
 
     def gen_markup(self,id,status):
         markup = InlineKeyboardMarkup()
-        callback_btn_detail = InlineKeyboardButton(text="🌟 Detail", callback_data="det,{0}".format(id))
+        callback_btn_detail = InlineKeyboardButton(text="🔅 Detail", url="https://telegram.me/shegalistbot?start=pr_{0}".format(id.split(",")[1]))
         if str(status) == "SOLD":
             callback_sold = InlineKeyboardButton(text="🔄 Resell", callback_data="rs,{0}".format(id))
         else:
@@ -224,7 +227,6 @@ PRICE : {2} Br
         callback_btn_delete = InlineKeyboardButton(text="❌ Delete", callback_data="del,{0}".format(id))
         markup.row_width = 2
         markup.add(callback_btn_detail, callback_sold, callback_btn_edit, callback_btn_delete)
-
         return markup
 
     def browse_productS(self, cat,message):
@@ -376,79 +378,84 @@ Price: {2}Br | Contact: {3}
     def gen_markup_unapproved(self,id,user_id):
 
         markup = InlineKeyboardMarkup()
+        callback_btn_detail = InlineKeyboardButton(text="🔅 Detail", url="https://telegram.me/shegalistbot?start=pr_{0}".format(id))
         callback_btn_buy = InlineKeyboardButton(text="❌ Decline", callback_data="decline,{0},{1}".format(user_id,id))
         callback_btn_wishlist = InlineKeyboardButton(text="✅ Approve", callback_data="apprv,{0},{1}".format(user_id,id))
-        markup.row_width = 2
-        markup.add(callback_btn_buy, callback_btn_wishlist)
+        markup.row_width = 3
+        markup.add(callback_btn_detail, callback_btn_buy, callback_btn_wishlist)
 
         return markup
 
 
     def update_product_status(self, id, data): # ->
 
-
         pro_ref = self.product_ref.child(id)
         pro_ref.update({
             'status': data
             })
+        product = self.product_ref.child(id).get()
+        if data == 1:
+            self.bot.send_message(product["message_id"], "Hey {0}, your product has been approved 🤗.".format(pro_ref["seller_name"]))
+        elif data == 3:
+            self.bot.send_message(product["message_id"], "Hey {0}, Sorry 😔 , we have to disapprove your product. Please refer to our guidline in the help section. Contact us @shega_support if you need help.".format(pro_ref["seller_name"]))
 
-        '''lock.acquire(True)
-        self.cursor.execute("""UPDATE  products SET
-            status = ?
-            WHERE productID = ?
-                """,(data,id))
-        self.conn.commit()
-        lock.release()'''
+
+
 
 
     def update_product_status_resell(self, id, data):  # this method resets the sold post aswell
 
-        lock.acquire(True)
+
+        pro_ref = self.product_ref.child(id)
+        pro_ref.update({
+            'status': data,
+            'soldPost':0
+            })
+
+        '''lock.acquire(True)
         self.cursor.execute("""UPDATE  products SET
             status = ?,
             soldPost = ?
             WHERE productID = ?
                 """,(data,0,id))
         self.conn.commit()
-        lock.release()
+        lock.release() '''
 
 
     def post_sold_item(self,id):
-        lock.acquire(True)
-        result = self.cursor.execute("""SELECT * FROM  products WHERE
-            productID = ?
-            AND deleted = ?
-            AND status = ?
-            AND soldPost= ?
-                """,(id,0,2,0))
-        products = result.fetchall()
-        lock.release()
-        print(products)
-        msgStart = self.bot.send_message("@shegalist", """
-------SOLD OUT-------
-#{0}   @shegalist
 
-{1}
+        product = self.product_ref.child(id).get()
+        product["key"] = id
 
-{2}
+        if product["status"] == 0:
+            return 1
+        elif product["status"] == 1:
+            if product["soldPost"] == 1:
+                print("This product is already sold")
+                return 2
+            else:
+                msgStart = self.bot.send_message("@shegalist", """
+    ------SOLD OUT-------
+    #{0}   @shegalist
 
-Price: {3} Br
+    {1}
 
-Have anything to sell?🤔. Post it on @shegalistbot
--------SOLD OUT--------
-        """.format(products[0][2],products[0][9],products[0][4],products[0][5]))
-        self.update_sold_post_status(id)
+    {2}
+
+    Price: {3} Br
+
+    Have anything to sell?🤔. Post it on @shegalistbot
+    -------SOLD OUT--------
+            """.format(product["cat"],product["title"],product["description"],product["price"]))
+                self.update_sold_post_status(id)
 
     def update_sold_post_status(self,id):
-        lock.acquire(True)
-        self.cursor.execute("""UPDATE  products SET
-            soldPost = ?
-            WHERE productID = ?
-                """,(1,id))
-        self.conn.commit()
-        lock.release()
 
-
+        pro_ref = self.product_ref.child(id)
+        data = 1
+        pro_ref.update({
+            'soldPost': data
+            })
 
 
     def post_to_channel(self,product_id):
@@ -485,14 +492,14 @@ Have anything to sell?🤔. Post it on @shegalistbot
             print("something went wrong..at post to a post_image_to_channel method")
             return
         if self.isGPS(products):
-            self.send_location_and_buttons(products)
+            self.send_location_and_buttons("@shegalist", products)
 
-    def send_location_and_buttons(self, product):
+    def send_location_and_buttons(self, id, product):
         location = product["location"]
         location = location.split(",")
         longi = location[0]
         latit = location[1]
-        self.bot.send_location("@shegalist", latitude=latit,longitude=longi, reply_markup=self.gen_markup_post(product["key"]) ) # status parameter is to change the sold/resell button
+        self.bot.send_location(id, latitude=latit,longitude=longi, reply_markup=self.gen_markup_post(product["key"]) ) # status parameter is to change the sold/resell button
 
 
     def isGPS(self, product):
@@ -502,8 +509,6 @@ Have anything to sell?🤔. Post it on @shegalistbot
             return True
         else:
             return False
-
-
 
     def post_one_images(self, id, images, products,user_ID):
 
@@ -516,7 +521,18 @@ Have anything to sell?🤔. Post it on @shegalistbot
             f.write(file1)
 
         if self.isGPS(products):
-            photo1 = telebot.types.InputMediaPhoto(open("file1.png","rb"), caption="""
+            if products["title"] == "empty":
+                photo1 = telebot.types.InputMediaPhoto(open("file1.png","rb"), caption="""
+#{0}   @shegalist
+
+{1}
+
+Price: {2}Br | Contact: {3}
+
+Have anything to sell?🤔. Post it on @shegalistbot
+            """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID)), parse_mode="Markdown")
+            else:
+                photo1 = telebot.types.InputMediaPhoto(open("file1.png","rb"), caption="""
 #{0}   @shegalist
 
 {4}
@@ -528,8 +544,22 @@ Price: {2}Br | Contact: {3}
 Have anything to sell?🤔. Post it on @shegalistbot
             """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID),products["title"]), parse_mode="Markdown")
 
+
         else:
-            photo1 = telebot.types.InputMediaPhoto(open("file1.png","rb"), caption="""
+            if products["title"] == "empty":
+                photo1 = telebot.types.InputMediaPhoto(open("file1.png","rb"), caption="""
+#{0}   @shegalist
+
+{1}
+
+Price: {2}Br | Contact: {3}
+
+📍: {4}
+
+Have anything to sell?🤔. Post it on @shegalistbot
+            """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID),products["location"]), parse_mode="Markdown")
+            else:
+                photo1 = telebot.types.InputMediaPhoto(open("file1.png","rb"), caption="""
 #{0}   @shegalist
 
 {5}
@@ -541,7 +571,9 @@ Price: {2}Br | Contact: {3}
 📍: {4}
 
 Have anything to sell?🤔. Post it on @shegalistbot
-            """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID),products["location"],products["title"]), parse_mode="Markdown")
+        """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID),products["location"],products["title"]), parse_mode="Markdown")
+
+
 
         media = [photo1]
         self.bot.send_media_group(id, media)
@@ -563,7 +595,18 @@ Have anything to sell?🤔. Post it on @shegalistbot
         photo1 = telebot.types.InputMediaPhoto(open("file1.png","rb"))
 
         if self.isGPS(products):
-            photo2 = telebot.types.InputMediaPhoto(open("file2.png","rb"), caption="""
+            if products["title"] == "empty":
+                photo2 = telebot.types.InputMediaPhoto(open("file2.png","rb"), caption="""
+#{0}   @shegalist
+
+{1}
+
+Price: {2}Br | Contact: {3}
+
+Have anything to sell?🤔. Post it on @shegalistbot
+            """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID)), parse_mode="Markdown")
+            else:
+                photo2 = telebot.types.InputMediaPhoto(open("file2.png","rb"), caption="""
 #{0}   @shegalist
 
 {4}
@@ -576,7 +619,20 @@ Have anything to sell?🤔. Post it on @shegalistbot
             """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID),products["title"]), parse_mode="Markdown")
 
         else:
-            photo2 = telebot.types.InputMediaPhoto(open("file2.png","rb"), caption="""
+            if products["title"] == "empty":
+                photo2 = telebot.types.InputMediaPhoto(open("file2.png","rb"), caption="""
+#{0}   @shegalist
+
+{1}
+
+Price: {2}Br | Contact: {3}
+
+📍: {4}
+
+Have anything to sell?🤔. Post it on @shegalistbot
+            """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID),products["location"]), parse_mode="Markdown")
+            else:
+                photo2 = telebot.types.InputMediaPhoto(open("file2.png","rb"), caption="""
 #{0}   @shegalist
 
 {5}
@@ -589,6 +645,8 @@ Price: {2}Br | Contact: {3}
 
 Have anything to sell?🤔. Post it on @shegalistbot
             """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID),products["location"],products["title"]), parse_mode="Markdown")
+
+
 
 
 
@@ -619,7 +677,18 @@ Have anything to sell?🤔. Post it on @shegalistbot
         photo3 = telebot.types.InputMediaPhoto(open("file3.png","rb"))
 
         if self.isGPS(products):
-            photo1 = telebot.types.InputMediaPhoto(open("file1.png","rb"), caption="""
+            if products["title"] == "empty":
+                photo1 = telebot.types.InputMediaPhoto(open("file1.png","rb"), caption="""
+#{0}   @shegalist
+
+{1}
+
+Price: {2}Br | Contact: {3}
+
+Have anything to sell?🤔. Post it on @shegalistbot
+            """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID)), parse_mode="Markdown")
+            else:
+                photo1 = telebot.types.InputMediaPhoto(open("file1.png","rb"), caption="""
 #{0}   @shegalist
 
 {4}
@@ -631,8 +700,23 @@ Price: {2}Br | Contact: {3}
 Have anything to sell?🤔. Post it on @shegalistbot
             """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID),products["title"]), parse_mode="Markdown")
 
+
+
         else:
-            photo1 = telebot.types.InputMediaPhoto(open("file1.png","rb"), caption="""
+            if products["title"] == "empty":
+                photo1 = telebot.types.InputMediaPhoto(open("file1.png","rb"), caption="""
+#{0}   @shegalist
+
+{1}
+
+Price: {2}Br | Contact: {3}
+
+📍: {4}
+
+Have anything to sell?🤔. Post it on @shegalistbot
+            """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID),products["location"]), parse_mode="Markdown")
+            else:
+                photo1 = telebot.types.InputMediaPhoto(open("file1.png","rb"), caption="""
 #{0}   @shegalist
 
 {5}
@@ -645,6 +729,8 @@ Price: {2}Br | Contact: {3}
 
 Have anything to sell?🤔. Post it on @shegalistbot
             """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID),products["location"],products["title"]), parse_mode="Markdown")
+
+
 
         media = [photo1, photo2,photo3]
         self.bot.send_media_group(id, media)
@@ -663,12 +749,20 @@ Have anything to sell?🤔. Post it on @shegalistbot
 
 
     def update_product_delete(self, id):
-        lock.acquire(True)
+
+        deleted = 1
+
+        user_ref = self.product_ref.child(id)
+        user_ref.update({
+            'deleted': deleted
+        })
+
+        '''lock.acquire(True)
         self.cursor.execute("""DELETE FROM products
             WHERE productID = ?
                 """,(id))
         self.conn.commit()
-        lock.release()
+        lock.release()'''
 
     def get_mention(self, message):
         user_id = message.from_user.id
@@ -681,3 +775,21 @@ Have anything to sell?🤔. Post it on @shegalistbot
         user_name = "Seller"
         mention = "["+user_name+"](tg://user?id="+str(user_id)+")"
         return mention
+
+    def send_detailed_pro_info(self, product_id, message):
+        print("sending you a detailed info: ", product_id)
+        product = self.product_ref.child(product_id).get()
+        product["key"] = product_id
+        pictures = product["pictures"].split(",")
+        user_ID = product["userID"]
+        if len(pictures) == 1:
+            self.post_one_images(message.chat.id,pictures,product,user_ID)
+        elif len(pictures) == 2:
+            self.post_two_images(message.chat.id,pictures,product,user_ID)
+        elif len(pictures) == 3:
+            self.post_three_images(message.chat.id,pictures,product,user_ID)
+        else:
+            print("something went wrong..at post to a post_image_to_channel method")
+            return
+        if self.isGPS(product):
+            self.send_location_and_buttons(message.chat.id,product)

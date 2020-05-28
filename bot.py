@@ -27,7 +27,7 @@ def send_welcome(message):
         cmd = unique_code[0]
         pro_id = unique_code[1]
         if cmd == "pr":
-            print("sending you a detailed info")
+            db.send_detailed_pro_info(pro_id,message)
         elif cmd == "wsh":
             print("adding product to your wishlist")
         else:
@@ -166,9 +166,9 @@ def collect_phone_detail(message):
     state = db.get_user_state(message)
     if state == 8:
         productForm["location"] = ""+str(message.location.longitude)+","+str(message.location.latitude)
-        print(productForm)
-        bot.send_message(message.chat.id, "Done!, Your product has been submitted for approval.")
+        #print(productForm)
         db.add_new_product(message, photos, productForm)
+        bot.send_message(message.chat.id, "Done!, Your product has been submitted for approval.")
         send_welcome_again(message)
     else:
         bot.send_message(message.chat.id, "Sorry, I don't need that now.")
@@ -178,21 +178,31 @@ def callback_query(call):
     cmd = call.data.split(",")[0]
     owner_id = call.data.split(",")[1]
     product_id = call.data.split(",")[2]
+    buttonid = ""+str(owner_id)+","+str(product_id)
     if cmd == "sd":
         if str(call.from_user.id) == str(owner_id):
-            db.update_product_status(product_id, 2)
-            bot.answer_callback_query(call.id, "Product has been updated to sold")
-            db.post_sold_item(product_id)
+            result = db.post_sold_item(product_id)
+            if result == 1:
+                bot.answer_callback_query(call.id, "Product has not been approved yet.")
+            elif result == 2:
+                bot.answer_callback_query(call.id, "Your product is already sold.")
+            else:
+                db.update_product_status(product_id, 2)
+                sd_status = "SOLD"
+                bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=db.gen_markup(buttonid,sd_status))
+                bot.answer_callback_query(call.id, "Product has been updated to sold")
         else:
             bot.answer_callback_query(call.id, "Sorry, you can't modify this product." )
     elif cmd == "rs":
         if str(call.from_user.id) == str(owner_id):
             db.update_product_status_resell(product_id, 0)
+            bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=db.gen_markup(buttonid,"RS"))
             bot.answer_callback_query(call.id, "Product has been re submitted for approval.")
         else:
             bot.answer_callback_query(call.id, "Sorry, you can't modify this product." )
     elif cmd == "del":
         if str(call.from_user.id) == str(owner_id):
+            bot.delete_message(call.message.chat.id, call.message.message_id)
             db.update_product_delete(product_id)
             bot.answer_callback_query(call.id, "Product has been deleted")
         else:
@@ -201,6 +211,13 @@ def callback_query(call):
         db.update_product_status(product_id, 1)
         bot.answer_callback_query(call.id, "Product has been approved..posting to a channel" )
         db.post_to_channel(product_id)
+        bot.delete_message(call.message.chat.id, call.message.message_id)
+    elif cmd == "decline":
+        db.update_product_status(product_id, 3)
+        bot.answer_callback_query(call.id, "Product has been declined." )
+        bot.delete_message(call.message.chat.id, call.message.message_id)
+
+
 
 
 def home_state_processor(message, listOfcommands):
@@ -211,8 +228,11 @@ def home_state_processor(message, listOfcommands):
         bot.send_message(message.chat.id, "Sorry, I don't understand that.")
     elif message.text == "Browse":
 
-        cat = "all"
+        bot.send_message(message.chat.id, "Sorry, this feature is under development. you will be notified when it is finished. Visit our channel @shegalist")
+        bot.send_message(message.chat.id, "sending you back.")
+        send_welcome_again(message)
 
+        '''cat = "all"
         db.update_state(9, message)
         markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, row_width=3)
         markup.add("Electronics", "Clothing","Furnitures","Books","Jewelries","Accessories","Watches","Others","🏠 Home","Next ▶️")
@@ -220,11 +240,13 @@ def home_state_processor(message, listOfcommands):
         Use buttons below to filter\
         """, reply_markup=markup, parse_mode="html",)
 
-        db.browse_productS(cat,message)
+        db.browse_productS(cat,message)'''
 
 
     elif message.text == "Search":
         bot.send_message(message.chat.id, "Sorry, this feature is under development.")
+        bot.send_message(message.chat.id, "sending you back.")
+        send_welcome_again(message)
     elif message.text == "Sell":
         db.update_state(2, message)
         sell_home = cmd.sell(message)
@@ -235,14 +257,32 @@ def home_state_processor(message, listOfcommands):
         db.seller_item(message)
     elif message.text == "Wish Lists":
         bot.send_message(message.chat.id, "Sorry, this feature is under development.")
+        bot.send_message(message.chat.id, "sending you back.")
+        send_welcome_again(message)
     elif message.text == "Alert me":
         bot.send_message(message.chat.id, "Sorry, this feature is under development.")
+        bot.send_message(message.chat.id, "sending you back.")
+        send_welcome_again(message)
     elif message.text == "Help":
         db.update_state(10, message)
         markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, row_width=2, resize_keyboard=True)
         markup.add("About us", "Admin Area","Home")
         msgStart = bot.send_message(message.chat.id, """\
-        Write down help text here\deep
+
+<b>Guidlines</b>
+
+When submitting your product make sure you took the right photos and your product is clearly visible in these photos.
+
+Write down the description correctly and make sure it matches with your item. If you are selling electronic devices you can mention model number of the product.
+
+Finally, when writing the descrion, dont forget to mention the status of your item(Brand new, slightly used) or mention for how many years you have been using it.
+
+<b>Help</b>
+
+If you need any help, please send your request to @shega_support. We will get back to to you in no time.
+
+
+Thank you.
         """, reply_markup=markup, parse_mode="html",)
 
 def selectCategories_state(message,listOfcommands):
@@ -267,7 +307,7 @@ def selectCategories_state(message,listOfcommands):
     elif message.text == "Beuty & Health" :
         select_cat_message(message,message.text)
     elif message.text == "❌ Cancel" :
-        bot.send_message(message.chat.id, "Process has been cancelled")
+        bot.send_message(message.chat.id, "Process has been cancelled, sending you back.")
         send_welcome_again(message)
 
 def select_cat_message(message, message_text):
@@ -285,8 +325,8 @@ Eg. SONY Television 40" TV \
 def receive_product_title(message, listOfcommands):
     global productForm
     if message.text == "❌ Cancel":
-        bot.send_message(message.chat.id, "process has been cancelled")
-        send_welcome(message)
+        bot.send_message(message.chat.id, "Process has been cancelled, sending you back.")
+        send_welcome_again(message)
     elif message.text == "Skip":
         bot.send_message(message.chat.id, "You have skipped product title. Make sure to include it in your product description.")
         productForm["title"] = "empty"
@@ -313,9 +353,9 @@ def receivePhoto_state(message,listOfcommands):
     if message.text not in listOfcommands:
         bot.send_message(message.chat.id, "Sorry, I don't understand that.")
     elif message.text == "Cancel":
-        bot.send_message(message.chat.id, "Process has been cancelled.")
+        bot.send_message(message.chat.id, "Process has been cancelled. sending you back")
         db.update_state(8, message)
-        send_welcome(message)
+        send_welcome_again(message)
     elif message.text == "Finish Sending":
         if len(photos) == 0:
             markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, row_width=2, resize_keyboard=True)
@@ -428,7 +468,11 @@ def help_state(message, listOfcommands):
 
     if message.text in listOfcommands:
         if message.text == "About us":
-            bot.send_message(message.chat.id, "Will update soon.")
+            markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, row_width=2, resize_keyboard=True)
+            markup.add("About us", "Admin Area","Home")
+            msgStart = bot.send_message(message.chat.id, """\
+Will update soon.
+            """, reply_markup=markup, parse_mode="html",)
         elif message.text == "Admin Area":
 
             if db.isAdmin(message):

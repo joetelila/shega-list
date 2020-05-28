@@ -10,7 +10,7 @@ class commandHelper:
         #self.bot.send_message(message.chat.id, "calling the sell function.")
         result = self.db.isUserRegistered(message)
         if not result:  # if the user is not registered
-            self.bot.send_message(message.chat.id, "{0} ;), I see it's your first time selling here.".format(message.chat.first_name),)
+            self.bot.send_message(message.chat.id, "{0} ;), I see it's your first time selling here. Let me register you first.".format(message.chat.first_name),)
             self.register(message)
         else:
             markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, row_width=3, resize_keyboard = True)
