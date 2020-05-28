@@ -138,6 +138,8 @@ class DB_helper:
 
     def add_new_product(self, message, photos, productForm): # ->
         user_detail = self.user_ref.order_by_child('tgId').equal_to(message.from_user.id).get()
+        for key, val in result.items():
+            user = val
         print(user_detail)
         location = productForm["location"]
         status = 0 # unaproved
@@ -156,7 +158,7 @@ class DB_helper:
                 'deleted': deleted,
                 'soldPost': soldPost,
                 'message_id':message.chat.id,
-                'seller_name': user_detail["fname"]
+                'seller_name': user["fname"]
                 })
 
 
