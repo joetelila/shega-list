@@ -3,11 +3,13 @@ import telebot
 import datetime
 from db_helper import DB_helper
 from cmdHelper import commandHelper
+from flask import Flask, request
+import os
 
 
 TOKEN = "1231860504:AAEx9qZ8znwwdwwq8vOzxskLEGJCBeaSaWs"
 bot = telebot.TeleBot(TOKEN)
-
+server = Flask(__name__)
 
 db = DB_helper(bot)
 cmd = commandHelper(bot, db)
@@ -519,4 +521,19 @@ def shareContact_state(message, listOfcommands):
         bot.send_message(message.chat.id, "Sorry, I don't understand that.")
 
 
-bot.polling()
+
+@server.route('/' + TOKEN, methods=['POST'])
+def getMessage():
+    bot.process_new_updates([telebot.types.Update.de_json(request.stream.read().decode("utf-8"))])
+    return "!", 200
+
+
+@server.route("/")
+def webhook():
+    bot.remove_webhook()
+    bot.set_webhook(url='https://your_heroku_project.com/' + TOKEN)
+    return "!", 200
+
+
+if __name__ == "__main__":
+    server.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)))
