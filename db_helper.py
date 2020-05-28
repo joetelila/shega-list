@@ -138,7 +138,7 @@ class DB_helper:
 
     def add_new_product(self, message, photos, productForm): # ->
         user_detail = self.user_ref.order_by_child('tgId').equal_to(message.from_user.id).get()
-        for key, val in result.items():
+        for key, val in user_detail.items():
             user = val
         print(user_detail)
         location = productForm["location"]
