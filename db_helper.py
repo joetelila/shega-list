@@ -138,6 +138,7 @@ class DB_helper:
 
     def add_new_product(self, message, photos, productForm): # ->
         user_detail = self.user_ref.order_by_child('tgId').equal_to(message.from_user.id).get()
+        print(user_detail)
         location = productForm["location"]
         status = 0 # unaproved
         separator = ","
