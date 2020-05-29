@@ -176,6 +176,7 @@ class DB_helper:
             self.bot.send_message(message.chat.id, "Apperently, your list is empty.")
         else:
             for i in products:
+                print(i)
                 status = i["status"]
                 price = i["price"]
                 desc = i["description"]
