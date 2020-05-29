@@ -519,7 +519,9 @@ Price: {2}Br | Contact: {3}
         file_id1 = images[0]
         file1 = self.bot.get_file(file_id1)
         file1 = self.bot.download_file(file1.file_path)
-
+        result = self.user_ref.order_by_child('tgId').equal_to(user_ID).get()
+        for key, val in result.items():
+            user_det = val
 
         with open("file1.png","wb") as f:
             f.write(file1)
@@ -533,8 +535,10 @@ Price: {2}Br | Contact: {3}
 
 Price: {2}Br | Contact: {3}
 
+📍: {4}, use map below for exact location.
+
 Have anything to sell?🤔. Post it on @shegalistbot
-            """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID)), parse_mode="Markdown")
+            """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID), user_det["city"] ), parse_mode="Markdown")
             else:
                 photo1 = telebot.types.InputMediaPhoto(open("file1.png","rb"), caption="""
 #{0}   @shegalist
@@ -545,8 +549,10 @@ Have anything to sell?🤔. Post it on @shegalistbot
 
 Price: {2}Br | Contact: {3}
 
+📍: {5}, use map below for exact location.
+
 Have anything to sell?🤔. Post it on @shegalistbot
-            """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID),products["title"]), parse_mode="Markdown")
+            """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID),products["title"], user_det["city"]), parse_mode="Markdown")
 
 
         else:
@@ -558,10 +564,10 @@ Have anything to sell?🤔. Post it on @shegalistbot
 
 Price: {2}Br | Contact: {3}
 
-📍: {4}
+📍: {4}, {5}
 
 Have anything to sell?🤔. Post it on @shegalistbot
-            """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID),products["location"]), parse_mode="Markdown")
+            """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID),products["location"], user_det["city"]), parse_mode="Markdown")
             else:
                 photo1 = telebot.types.InputMediaPhoto(open("file1.png","rb"), caption="""
 #{0}   @shegalist
@@ -572,10 +578,10 @@ Have anything to sell?🤔. Post it on @shegalistbot
 
 Price: {2}Br | Contact: {3}
 
-📍: {4}
+📍: {4}, {6}
 
 Have anything to sell?🤔. Post it on @shegalistbot
-        """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID),products["location"],products["title"]), parse_mode="Markdown")
+        """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID),products["location"],products["title"], user_det["city"]), parse_mode="Markdown")
 
 
 
@@ -590,6 +596,9 @@ Have anything to sell?🤔. Post it on @shegalistbot
         file1 = self.bot.download_file(file1.file_path)
         file2 = self.bot.get_file(file_id2)
         file2 = self.bot.download_file(file2.file_path)
+        result = self.user_ref.order_by_child('tgId').equal_to(user_ID).get()
+        for key, val in result.items():
+            user_det = val
 
         with open("file1.png","wb") as f:
             f.write(file1)
@@ -607,8 +616,10 @@ Have anything to sell?🤔. Post it on @shegalistbot
 
 Price: {2}Br | Contact: {3}
 
+📍: {4}, use map below for exact location.
+
 Have anything to sell?🤔. Post it on @shegalistbot
-            """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID)), parse_mode="Markdown")
+            """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID), user_det["city"]), parse_mode="Markdown")
             else:
                 photo2 = telebot.types.InputMediaPhoto(open("file2.png","rb"), caption="""
 #{0}   @shegalist
@@ -619,8 +630,10 @@ Have anything to sell?🤔. Post it on @shegalistbot
 
 Price: {2}Br | Contact: {3}
 
+📍: {5}, use map below for exact location.
+
 Have anything to sell?🤔. Post it on @shegalistbot
-            """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID),products["title"]), parse_mode="Markdown")
+            """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID),products["title"], user_det["city"]), parse_mode="Markdown")
 
         else:
             if products["title"] == "empty":
@@ -631,10 +644,10 @@ Have anything to sell?🤔. Post it on @shegalistbot
 
 Price: {2}Br | Contact: {3}
 
-📍: {4}
+📍: {4}, {5}
 
 Have anything to sell?🤔. Post it on @shegalistbot
-            """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID),products["location"]), parse_mode="Markdown")
+            """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID),products["location"], user_det["city"]), parse_mode="Markdown")
             else:
                 photo2 = telebot.types.InputMediaPhoto(open("file2.png","rb"), caption="""
 #{0}   @shegalist
@@ -645,10 +658,10 @@ Have anything to sell?🤔. Post it on @shegalistbot
 
 Price: {2}Br | Contact: {3}
 
-📍: {4}
+📍: {4}, {6}
 
 Have anything to sell?🤔. Post it on @shegalistbot
-            """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID),products["location"],products["title"]), parse_mode="Markdown")
+            """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID),products["location"],products["title"], user_det["city"]), parse_mode="Markdown")
 
 
 
@@ -669,7 +682,10 @@ Have anything to sell?🤔. Post it on @shegalistbot
         file3 = self.bot.get_file(file_id3)
         file3 = self.bot.download_file(file3.file_path)
 
-
+        result = self.user_ref.order_by_child('tgId').equal_to(user_ID).get()
+        for key, val in result.items():
+            user_det = val
+        #
         with open("file1.png","wb") as f:
             f.write(file1)
         with open("file2.png","wb") as f:
@@ -689,8 +705,10 @@ Have anything to sell?🤔. Post it on @shegalistbot
 
 Price: {2}Br | Contact: {3}
 
+📍: {4}, use map below for exact location.
+
 Have anything to sell?🤔. Post it on @shegalistbot
-            """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID)), parse_mode="Markdown")
+            """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID), user_det["city"]), parse_mode="Markdown")
             else:
                 photo1 = telebot.types.InputMediaPhoto(open("file1.png","rb"), caption="""
 #{0}   @shegalist
@@ -701,8 +719,10 @@ Have anything to sell?🤔. Post it on @shegalistbot
 
 Price: {2}Br | Contact: {3}
 
+📍: {5}, use map below for exact location
+
 Have anything to sell?🤔. Post it on @shegalistbot
-            """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID),products["title"]), parse_mode="Markdown")
+            """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID),products["title"], user_det["city"]), parse_mode="Markdown")
 
 
 
@@ -715,10 +735,10 @@ Have anything to sell?🤔. Post it on @shegalistbot
 
 Price: {2}Br | Contact: {3}
 
-📍: {4}
+📍: {4}, {5}
 
 Have anything to sell?🤔. Post it on @shegalistbot
-            """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID),products["location"]), parse_mode="Markdown")
+            """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID),products["location"], user_det["city"]), parse_mode="Markdown")
             else:
                 photo1 = telebot.types.InputMediaPhoto(open("file1.png","rb"), caption="""
 #{0}   @shegalist
@@ -729,10 +749,10 @@ Have anything to sell?🤔. Post it on @shegalistbot
 
 Price: {2}Br | Contact: {3}
 
-📍: {4}
+📍: {4}, {6}
 
 Have anything to sell?🤔. Post it on @shegalistbot
-            """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID),products["location"],products["title"]), parse_mode="Markdown")
+            """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID),products["location"],products["title"],user_det["city"]), parse_mode="Markdown")
 
 
 

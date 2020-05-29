@@ -318,7 +318,7 @@ def select_cat_message(message, message_text):
     markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, row_width=2, resize_keyboard=True)
     markup.add("❌ Cancel", "Skip")
     msgStart = bot.send_message(message.chat.id, """\
-Good:), Now send me Product title.
+Good:), Now send me Product title. You can skip this if it doesn't have title.
 
 Eg. SONY Television 40" TV \
 """.format(message.text.lower()), reply_markup=markup, parse_mode="html",)
@@ -519,10 +519,6 @@ def shareContact_state(message, listOfcommands):
             send_welcome(message)
     else:
         bot.send_message(message.chat.id, "Sorry, I don't understand that.")
-
-
-
-#bot.polling()
 
 
 @server.route('/' + TOKEN, methods=['POST'])
