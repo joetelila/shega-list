@@ -159,6 +159,8 @@ class DB_helper:
                 'message_id':message.chat.id,
                 'seller_name': user["fname"]
                 })
+        self.bot.send_message(565126182, "Hey Joe, someone just added a new product. Please approve fast.")
+        self.bot.send_message(966205634, "Hey Shega, someone just added a new product. Please approve fast.")
 
 
     def seller_item(self, message):  # ->
