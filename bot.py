@@ -9,7 +9,7 @@ import os
 
 TOKEN = "1231860504:AAEx9qZ8znwwdwwq8vOzxskLEGJCBeaSaWs"
 bot = telebot.TeleBot(TOKEN)
-server = Flask(__name__)
+#server = Flask(__name__)
 
 db = DB_helper(bot)
 cmd = commandHelper(bot, db)
@@ -25,7 +25,7 @@ def send_welcome(message):
 
     db.saveuser(message)
     if extract_unique_code(message.text):
-        unique_code = extract_unique_code(message.text).split("_")
+        unique_code = extract_unique_code(message.text).split("_joe_shega_")
         cmd = unique_code[0]
         pro_id = unique_code[1]
         if cmd == "pr":
@@ -481,7 +481,7 @@ Will update soon.
                 db.update_state(11, message) # 7 is state for accepting price
                 markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, row_width=2, resize_keyboard=True)
                 markup.add("Home")
-                msgStart = bot.send_message(message.chat.id, """Sending you all UNAPPROVED items . . .""", reply_markup=markup, parse_mode="html",)
+                msgStart = bot.send_message(message.chat.id, """Sending you all unaproved items.""", reply_markup=markup, parse_mode="html",)
                 db.un_approved_items(message)
             else:
                 bot.send_message(message.chat.id, "Sorry, you're not allowed to use this button. sending you to home")
@@ -521,6 +521,9 @@ def shareContact_state(message, listOfcommands):
         bot.send_message(message.chat.id, "Sorry, I don't understand that.")
 
 
+bot.polling()
+
+'''
 @server.route('/' + TOKEN, methods=['POST'])
 def getMessage():
     bot.process_new_updates([telebot.types.Update.de_json(request.stream.read().decode("utf-8"))])
@@ -535,4 +538,4 @@ def webhook():
 
 
 if __name__ == "__main__":
-    server.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000)))
+    server.run(host="0.0.0.0", port=int(os.environ.get('PORT', 5000))) '''

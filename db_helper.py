@@ -442,15 +442,15 @@ Price: {2}Br | Contact: {3}
             else:
                 msgStart = self.bot.send_message("@shegalist", """
     ------SOLD OUT-------
-    #{0}   @shegalist
+#{0}   @shegalist
 
-    {1}
+{1}
 
-    {2}
+{2}
 
-    Price: {3} Br
+Price: {3} Br
 
-    Have anything to sell?🤔. Post it on @shegalistbot
+Have anything to sell?🤔. Post it on @shegalistbot
     -------SOLD OUT--------
             """.format(product["cat"],product["title"],product["description"],product["price"]))
                 self.update_sold_post_status(id)
@@ -501,6 +501,7 @@ Price: {2}Br | Contact: {3}
             self.send_location_and_buttons("@shegalist", products)
 
     def send_location_and_buttons(self, id, product):
+
         location = product["location"]
         location = location.split(",")
         longi = location[0]
@@ -763,18 +764,16 @@ Have anything to sell?🤔. Post it on @shegalistbot
 
 
     def gen_markup_post(self,id):
-
-
         markup = InlineKeyboardMarkup()
-        callback_btn_buy = InlineKeyboardButton(text="🔅 Detail", url="https://telegram.me/shegalistbot?start=pr_{0}".format(id))
-        callback_btn_wishlist = InlineKeyboardButton(text="❤️ Add to wishlist", url="https://telegram.me/shegalistbot?start=wsh_{0}".format(id))
+        callback_btn_buy = InlineKeyboardButton(text="🔅 Detail", url="https://telegram.me/shegalistbot?start=pr_joe_shega_{0}".format(id))
+        callback_btn_wishlist = InlineKeyboardButton(text="❤️ Add to wishlist", url="https://telegram.me/shegalistbot?start=wsh_joe_shega_{0}".format(id))
         markup.row_width = 2
         markup.add(callback_btn_buy, callback_btn_wishlist)
 
         return markup
 
 
-    def update_product_delete(self, id):
+    def update_product_delete(self, id): STAATLICHES
 
         deleted = 1
 
@@ -803,7 +802,6 @@ Have anything to sell?🤔. Post it on @shegalistbot
         return mention
 
     def send_detailed_pro_info(self, product_id, message):
-        print("sending you a detailed info: ", product_id)
         product = self.product_ref.child(product_id).get()
         product["key"] = product_id
         pictures = product["pictures"].split(",")
