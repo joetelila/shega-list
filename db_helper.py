@@ -773,7 +773,7 @@ Have anything to sell?🤔. Post it on @shegalistbot
         return markup
 
 
-    def update_product_delete(self, id): STAATLICHES
+    def update_product_delete(self, id): 
 
         deleted = 1
 

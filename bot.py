@@ -520,8 +520,8 @@ def shareContact_state(message, listOfcommands):
     else:
         bot.send_message(message.chat.id, "Sorry, I don't understand that.")
 
-#
-bot.polling()
+
+#bot.polling()
 
 
 @server.route('/' + TOKEN, methods=['POST'])
