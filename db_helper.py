@@ -223,7 +223,7 @@ PRICE : {2} Br
 
     def gen_markup(self,id,status):
         markup = InlineKeyboardMarkup()
-        callback_btn_detail = InlineKeyboardButton(text="🔅 Detail", url="https://telegram.me/shegalistbot?start=pr_{0}".format(id.split(",")[1]))
+        callback_btn_detail = InlineKeyboardButton(text="🔅 Detail", url="https://telegram.me/shegalistbot?start=pr_joe_shega_{0}".format(id.split(",")[1]))
         if str(status) == "SOLD":
             callback_sold = InlineKeyboardButton(text="🔄 Resell", callback_data="rs,{0}".format(id))
         else:
@@ -383,7 +383,7 @@ Price: {2}Br | Contact: {3}
     def gen_markup_unapproved(self,id,user_id):
 
         markup = InlineKeyboardMarkup()
-        callback_btn_detail = InlineKeyboardButton(text="🔅 Detail", url="https://telegram.me/shegalistbot?start=pr_{0}".format(id))
+        callback_btn_detail = InlineKeyboardButton(text="🔅 Detail", url="https://telegram.me/shegalistbot?start=pr_joe_shega_{0}".format(id))
         callback_btn_buy = InlineKeyboardButton(text="❌ Decline", callback_data="decline,{0},{1}".format(user_id,id))
         callback_btn_wishlist = InlineKeyboardButton(text="✅ Approve", callback_data="apprv,{0},{1}".format(user_id,id))
         markup.row_width = 3
@@ -773,7 +773,7 @@ Have anything to sell?🤔. Post it on @shegalistbot
         return markup
 
 
-    def update_product_delete(self, id): 
+    def update_product_delete(self, id):
 
         deleted = 1
 
