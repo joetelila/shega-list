@@ -230,7 +230,7 @@ def home_state_processor(message, listOfcommands):
         bot.send_message(message.chat.id, "Sorry, I don't understand that.")
     elif message.text == "Browse":
 
-        bot.send_message(message.chat.id, "Sorry, this feature is under development. you will be notified when it is finished. Visit our channel @shegalist")
+        bot.send_message(message.chat.id, "Will be available when the list has been populated. Browse on @shegalist")
         bot.send_message(message.chat.id, "sending you back.")
         send_welcome_again(message)
 
@@ -246,7 +246,7 @@ def home_state_processor(message, listOfcommands):
 
 
     elif message.text == "Search":
-        bot.send_message(message.chat.id, "Sorry, this feature is under development.")
+        bot.send_message(message.chat.id, "Will be available when the list has been populated. Search on @shegalist")
         bot.send_message(message.chat.id, "sending you back.")
         send_welcome_again(message)
     elif message.text == "Sell":
@@ -258,11 +258,11 @@ def home_state_processor(message, listOfcommands):
     elif message.text == "Your Items":
         db.seller_item(message)
     elif message.text == "Wish Lists":
-        bot.send_message(message.chat.id, "Sorry, this feature is under development.")
+        bot.send_message(message.chat.id, "Will be available on 10th of June.")
         bot.send_message(message.chat.id, "sending you back.")
         send_welcome_again(message)
     elif message.text == "Alert me":
-        bot.send_message(message.chat.id, "Sorry, this feature is under development.")
+        bot.send_message(message.chat.id, "Will be available when the list has been populated.")
         bot.send_message(message.chat.id, "sending you back.")
         send_welcome_again(message)
     elif message.text == "Help":
