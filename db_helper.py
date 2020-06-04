@@ -202,9 +202,9 @@ class DB_helper:
                     status ="UNLISTED"
 
                 picture = i["pictures"].split(",")
-                #file_id1 = picture[1]
+                file_id1 = picture[0]
                 print("pictures: ", picture)
-                print("file_id",  picture[1])
+                print("file_id", file_id1)
                 file1 = self.bot.get_file(file_id1)
                 file1 = self.bot.download_file(file1.file_path)
                 with open("file1.png","wb") as f:
@@ -358,7 +358,7 @@ PRICE : {2} Br
 {1}
 
 Price : {2} Br | Contact : {3}
-        """.format(products[2],products[4],products[5],self.get_mention(message),products[9]) ,reply_markup=self.gen_markup_post(products[0]), parse_mode="Markdown") # status parameter is to change the sold/resell button
+        """.format(products[2],products[4],products[5],self.get_mention(products["userID"],products["seller_name"]),products[9]) ,reply_markup=self.gen_markup_post(products[0]), parse_mode="Markdown") # status parameter is to change the sold/resell button
 
     def send_unapproved_Images(self, products,message):
 
@@ -379,7 +379,7 @@ Price : {2} Br | Contact : {3}
 Price: {2}Br | Contact: {3}
 
 📍: {4}
-        """.format(products["cat"],products["description"],products["price"],self.get_mention(message),products["location"], products["title"]) ,reply_markup=self.gen_markup_unapproved(products["key"],message.chat.id), parse_mode="Markdown") # status parameter is to change the sold/resell button
+        """.format(products["cat"],products["description"],products["price"],self.get_mention(products["userID"],products["seller_name"]),products["location"], products["title"]) ,reply_markup=self.gen_markup_unapproved(products["key"],message.chat.id), parse_mode="Markdown") # status parameter is to change the sold/resell button
 
 
     def gen_markup_unapproved(self,id,user_id):
@@ -474,28 +474,15 @@ Have anything to sell?🤔. Post it on @shegalistbot
         self.post_image_to_channel(product, user_ID)
 
 
-        '''lock.acquire(True)
-        result = self.cursor.execute("""SELECT * FROM  products WHERE
-            productID = ?
-            AND deleted = ?
-                """,(product_id,0))
-        products = result.fetchall()
-        lock.release()
-
-        if len(products) == 1:
-            user_ID = products[0][1]
-            self.post_image_to_channel(products, user_ID)
-        else:
-            print("something went wrong..at post to a channel method") '''
-
     def post_image_to_channel(self, products, user_ID):
         pictures = products["pictures"].split(",")
+        sellerName = products["seller_name"]
         if len(pictures) == 1:
-            self.post_one_images("@shegalist",pictures,products,user_ID)
+            self.post_one_images("@shegalist",pictures,products,user_ID, sellerName)
         elif len(pictures) == 2:
-            self.post_two_images("@shegalist",pictures,products,user_ID)
+            self.post_two_images("@shegalist",pictures,products,user_ID, sellerName)
         elif len(pictures) == 3:
-            self.post_three_images("@shegalist",pictures,products,user_ID)
+            self.post_three_images("@shegalist",pictures,products,user_ID, sellerName)
         else:
             print("something went wrong..at post to a post_image_to_channel method")
             return
@@ -519,7 +506,7 @@ Have anything to sell?🤔. Post it on @shegalistbot
         else:
             return False
 
-    def post_one_images(self, id, images, products,user_ID):
+    def post_one_images(self, id, images, products,user_ID, sellerName):
 
         file_id1 = images[0]
         file1 = self.bot.get_file(file_id1)
@@ -543,7 +530,7 @@ Price: {2}Br | Contact: {3}
 📍: {4}, use map below for exact location.
 
 Have anything to sell?🤔. Post it on @shegalistbot
-            """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID), user_det["city"] ), parse_mode="Markdown")
+            """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID, sellerName), user_det["city"] ), parse_mode="Markdown")
             else:
                 photo1 = telebot.types.InputMediaPhoto(open("file1.png","rb"), caption="""
 #{0}   @shegalist
@@ -557,7 +544,7 @@ Price: {2}Br | Contact: {3}
 📍: {5}, use map below for exact location.
 
 Have anything to sell?🤔. Post it on @shegalistbot
-            """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID),products["title"], user_det["city"]), parse_mode="Markdown")
+            """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID, sellerName),products["title"], user_det["city"]), parse_mode="Markdown")
 
 
         else:
@@ -572,7 +559,7 @@ Price: {2}Br | Contact: {3}
 📍: {4}, {5}
 
 Have anything to sell?🤔. Post it on @shegalistbot
-            """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID),products["location"], user_det["city"]), parse_mode="Markdown")
+            """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID, sellerName),products["location"], user_det["city"]), parse_mode="Markdown")
             else:
                 photo1 = telebot.types.InputMediaPhoto(open("file1.png","rb"), caption="""
 #{0}   @shegalist
@@ -586,14 +573,14 @@ Price: {2}Br | Contact: {3}
 📍: {4}, {6}
 
 Have anything to sell?🤔. Post it on @shegalistbot
-        """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID),products["location"],products["title"], user_det["city"]), parse_mode="Markdown")
+        """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID,sellerName),products["location"],products["title"], user_det["city"]), parse_mode="Markdown")
 
 
 
         media = [photo1]
         self.bot.send_media_group(id, media)
 
-    def post_two_images(self, id, images, products,user_ID):
+    def post_two_images(self, id, images, products,user_ID, sellerName):
 
         file_id1 = images[0]
         file_id2 = images[1]
@@ -624,7 +611,7 @@ Price: {2}Br | Contact: {3}
 📍: {4}, use map below for exact location.
 
 Have anything to sell?🤔. Post it on @shegalistbot
-            """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID), user_det["city"]), parse_mode="Markdown")
+            """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID, sellerName), user_det["city"]), parse_mode="Markdown")
             else:
                 photo2 = telebot.types.InputMediaPhoto(open("file2.png","rb"), caption="""
 #{0}   @shegalist
@@ -638,7 +625,7 @@ Price: {2}Br | Contact: {3}
 📍: {5}, use map below for exact location.
 
 Have anything to sell?🤔. Post it on @shegalistbot
-            """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID),products["title"], user_det["city"]), parse_mode="Markdown")
+            """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID,sellerName),products["title"], user_det["city"]), parse_mode="Markdown")
 
         else:
             if products["title"] == "empty":
@@ -652,7 +639,7 @@ Price: {2}Br | Contact: {3}
 📍: {4}, {5}
 
 Have anything to sell?🤔. Post it on @shegalistbot
-            """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID),products["location"], user_det["city"]), parse_mode="Markdown")
+            """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID,sellerName),products["location"], user_det["city"]), parse_mode="Markdown")
             else:
                 photo2 = telebot.types.InputMediaPhoto(open("file2.png","rb"), caption="""
 #{0}   @shegalist
@@ -666,7 +653,7 @@ Price: {2}Br | Contact: {3}
 📍: {4}, {6}
 
 Have anything to sell?🤔. Post it on @shegalistbot
-            """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID),products["location"],products["title"], user_det["city"]), parse_mode="Markdown")
+            """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID,sellerName),products["location"],products["title"], user_det["city"]), parse_mode="Markdown")
 
 
 
@@ -675,7 +662,7 @@ Have anything to sell?🤔. Post it on @shegalistbot
         media = [photo1, photo2]
         self.bot.send_media_group(id, media)
 
-    def post_three_images(self, id, images, products,user_ID):
+    def post_three_images(self, id, images, products,user_ID, sellerName):
 
         file_id1 = images[0]
         file_id2 = images[1]
@@ -713,7 +700,7 @@ Price: {2}Br | Contact: {3}
 📍: {4}, use map below for exact location.
 
 Have anything to sell?🤔. Post it on @shegalistbot
-            """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID), user_det["city"]), parse_mode="Markdown")
+            """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID,sellerName), user_det["city"]), parse_mode="Markdown")
             else:
                 photo1 = telebot.types.InputMediaPhoto(open("file1.png","rb"), caption="""
 #{0}   @shegalist
@@ -727,7 +714,7 @@ Price: {2}Br | Contact: {3}
 📍: {5}, use map below for exact location
 
 Have anything to sell?🤔. Post it on @shegalistbot
-            """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID),products["title"], user_det["city"]), parse_mode="Markdown")
+            """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID,sellerName),products["title"], user_det["city"]), parse_mode="Markdown")
 
 
 
@@ -743,7 +730,7 @@ Price: {2}Br | Contact: {3}
 📍: {4}, {5}
 
 Have anything to sell?🤔. Post it on @shegalistbot
-            """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID),products["location"], user_det["city"]), parse_mode="Markdown")
+            """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID,sellerName),products["location"], user_det["city"]), parse_mode="Markdown")
             else:
                 photo1 = telebot.types.InputMediaPhoto(open("file1.png","rb"), caption="""
 #{0}   @shegalist
@@ -757,7 +744,7 @@ Price: {2}Br | Contact: {3}
 📍: {4}, {6}
 
 Have anything to sell?🤔. Post it on @shegalistbot
-            """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID),products["location"],products["title"],user_det["city"]), parse_mode="Markdown")
+            """.format(products["cat"],products["description"],products["price"],self.get_post_mention(user_ID,sellerName),products["location"],products["title"],user_det["city"]), parse_mode="Markdown")
 
 
 
@@ -791,16 +778,14 @@ Have anything to sell?🤔. Post it on @shegalistbot
         self.conn.commit()
         lock.release()'''
 
-    def get_mention(self, message):
-        user_id = message.from_user.id
-        user_name = message.from_user.first_name
-        mention = "["+user_name+"](tg://user?id="+str(user_id)+")"
+    def get_mention(self, user_id, sellerName):
+        mention = "["+sellerName+"](tg://user?id="+str(user_id)+")"
         return mention
 
-    def get_post_mention(self, userID):
+    def get_post_mention(self, userID,sellerName):
         user_id = userID
-        user_name = "Seller"
-        mention = "["+user_name+"](tg://user?id="+str(user_id)+")"
+        mention = "["+sellerName+"](tg://user?id="+str(user_id)+")"
+        print(mention)
         return mention
 
     def send_detailed_pro_info(self, product_id, message):
@@ -808,12 +793,13 @@ Have anything to sell?🤔. Post it on @shegalistbot
         product["key"] = product_id
         pictures = product["pictures"].split(",")
         user_ID = product["userID"]
+        sellerName = product["seller_name"]
         if len(pictures) == 1:
-            self.post_one_images(message.chat.id,pictures,product,user_ID)
+            self.post_one_images(message.chat.id,pictures,product,user_ID,sellerName)
         elif len(pictures) == 2:
-            self.post_two_images(message.chat.id,pictures,product,user_ID)
+            self.post_two_images(message.chat.id,pictures,product,user_ID,sellerName)
         elif len(pictures) == 3:
-            self.post_three_images(message.chat.id,pictures,product,user_ID)
+            self.post_three_images(message.chat.id,pictures,product,user_ID,sellerName)
         else:
             print("something went wrong..at post to a post_image_to_channel method")
             return
