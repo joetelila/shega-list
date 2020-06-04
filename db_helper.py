@@ -178,7 +178,7 @@ class DB_helper:
             self.bot.send_message(message.chat.id, "Apperently, your list is empty.")
         else:
             for i in products:
-                print(i)
+
                 status = i["status"]
                 price = i["price"]
                 desc = i["description"]
@@ -202,7 +202,9 @@ class DB_helper:
                     status ="UNLISTED"
 
                 picture = i["pictures"].split(",")
-                file_id1 = picture[1]
+                #file_id1 = picture[1]
+                print("pictures: ", picture)
+                print("file_id",  picture[1])
                 file1 = self.bot.get_file(file_id1)
                 file1 = self.bot.download_file(file1.file_path)
                 with open("file1.png","wb") as f:
