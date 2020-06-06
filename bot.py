@@ -83,7 +83,7 @@ def handle_message(message):
         listOfcommands = ['Back'] # you can check here if the dictionaty alredy has some info before!
         collect_user_city(message, listOfcommands)
     elif state == 3: # share contact state
-        listOfcommands = ['Main Menu']
+        listOfcommands = ['Main Menu','Skip']
         shareContact_state(message, listOfcommands)
     elif state == 4: # category list
         listOfcommands = ['Electronics','Clothing','Furnitures','Books','Jewelries','Accessories','Watches','Beuty & Health','Others','❌ Cancel']
@@ -507,7 +507,7 @@ def admin_state(message, listOfcommands):
 def collect_user_city(message,listOfcommands):
     global userForm
     if message.text == "Back":
-        send_welcome(message)
+        send_welcome_again(message)
     else:
         userForm["city"] = message.text
         db.update_state(3, message)
@@ -515,8 +515,12 @@ def collect_user_city(message,listOfcommands):
 
 def shareContact_state(message, listOfcommands):
     if message.text  in listOfcommands:
-        if message.text == "Main Menu":
-            send_welcome(message)
+        if message.text == "Skip":
+            userForm["phone"] = "0000"
+            db.register_user(userForm,message)
+            cmd.sell(message)
+        elif message.text == "Main Menu":
+            send_welcome_again(message)
     else:
         bot.send_message(message.chat.id, "Sorry, I don't understand that.")
 

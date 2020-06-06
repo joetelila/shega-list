@@ -32,10 +32,10 @@ class commandHelper:
     """, reply_markup=markup, parse_mode="html",)
 
     def accept_user_number(self, message):
-        markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, row_width=1, resize_keyboard = True)
-        button_phone = types.KeyboardButton ( text = "Send Phone Number" , request_contact = True )
+        markup = types.ReplyKeyboardMarkup(one_time_keyboard=True, row_width=3, resize_keyboard = True)
+        button_phone = types.KeyboardButton (text = "Share Number" , request_contact = True )
         markup.add(button_phone)
-        markup.add("Main Menu")
+        markup.add("Main Menu","Skip")
         msgStart = self.bot.send_message(message.chat.id, """\
-    Click the button below to share your contact\
-    """, reply_markup=markup, parse_mode="html",)
+    Click the button below to share your contact. Your contact is only used for a buyer to contact you.\
+    """, reply_markup=markup, parse_mode="html")
