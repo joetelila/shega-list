@@ -214,6 +214,11 @@ def callback_query(call):
         bot.answer_callback_query(call.id, "Product has been approved..posting to a channel" )
         db.post_to_channel(product_id)
         bot.delete_message(call.message.chat.id, call.message.message_id)
+    elif cmd == "ignre":
+        db.update_product_status(product_id, 5)
+        bot.answer_callback_query(call.id, "Product has been Ignored" )
+        bot.delete_message(call.message.chat.id, call.message.message_id)
+
     elif cmd == "decline":
         db.update_product_status(product_id, 3)
         bot.answer_callback_query(call.id, "Product has been declined." )
@@ -271,7 +276,9 @@ def home_state_processor(message, listOfcommands):
         markup.add("About us", "Admin Area","Home")
         msgStart = bot.send_message(message.chat.id, """\
 
-<b>Guidlines</b>
+<b>Guidelines</b>
+
+This is a place to sell the items you have been using and want to sell them.
 
 When submitting your product make sure you took the right photos and your product is clearly visible in these photos.
 

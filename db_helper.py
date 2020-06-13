@@ -198,6 +198,8 @@ class DB_helper:
                     status = "UNAPPROVED"
                 elif status == 4:
                     status = "RESELLING"
+                elif status == 5:
+                    status = "IGNORED"
                 else:
                     status ="UNLISTED"
 
@@ -388,8 +390,10 @@ Price: {2}Br | Contact: {3}
         callback_btn_detail = InlineKeyboardButton(text="🔅 Detail", url="https://telegram.me/shegalistbot?start=pr_joe_shega_{0}".format(id))
         callback_btn_buy = InlineKeyboardButton(text="❌ Decline", callback_data="decline,{0},{1}".format(user_id,id))
         callback_btn_wishlist = InlineKeyboardButton(text="✅ Approve", callback_data="apprv,{0},{1}".format(user_id,id))
+        callback_btn_ignore = InlineKeyboardButton(text="😏 Ignore", callback_data="ignre,{0},{1}".format(user_id,id))
+
         markup.row_width = 3
-        markup.add(callback_btn_detail, callback_btn_buy, callback_btn_wishlist)
+        markup.add(callback_btn_detail, callback_btn_buy, callback_btn_wishlist,callback_btn_ignore)
 
         return markup
 
