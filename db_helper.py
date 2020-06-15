@@ -407,7 +407,8 @@ Price: {2}Br | Contact: {3}
 
         product = self.product_ref.child(id).get()
         if data == 1:
-            self.bot.send_message(product["message_id"], "Hey {0}, your product has been approved 🤗.".format(product["seller_name"]))
+            self.bot.send_message(product["message_id"], "Congrats {0}, your product has been approved 🤗. Please update to SOLD if your product is sold. You can manage your products right from the bot.".format(product["seller_name"]))
+            self.bot.send_message(product["message_id"], "As always thank you and don't forget to share the channel @shegalist to atleast 3 of your friends. \n\nBest,")
         elif data == 3:
             self.bot.send_message(product["message_id"], "Hey {0}, Sorry 😔 , we have to disapprove your product. Please refer to our guidline in the help section. Contact us @shega_support if you need help.".format(product["seller_name"]))
 
